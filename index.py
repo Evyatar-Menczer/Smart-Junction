@@ -1,8 +1,8 @@
 import requests
+from traffic_light import TrafficLight
 
 # inputs 12,100,2,4
-
-#output [boolean , boolean, boolean, boolean]
+# output [boolean , boolean, boolean, boolean]
 
 # globals:
 
@@ -15,20 +15,6 @@ MAX_SIGNAL_DURATION = 15  # 15 seconds
 
 lights_queue = []
 is_new_state = False
-
-
-class TrafficLight:
-    def __init__(self, direction) -> None:
-        self.count = 0
-        self.duration = 0
-        self.direction = direction
-
-    def set_count(self, count):
-        self.count = count
-
-    def set_duration(self, duration):
-        self.duration = duration
-
 
 
 # returns [boolean , boolean, boolean, boolean]
@@ -47,7 +33,6 @@ def main():
     # response = requests.get("http://api.open-notify.org/astros.json")
     # print(response.json())
     # print(response)
-
 
 if __name__ == '__main__':
     main()
