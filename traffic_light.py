@@ -1,9 +1,9 @@
 class TrafficLight:
-    def __init__(self, direction) -> None:
+    def __init__(self, direction,starvation=0) -> None:
         self.count = 0
         self.duration = 0
         self.direction = direction
-        self.starvations = 0
+        self.starvation = starvation
 
     def set_count(self, count):
         self.count = count

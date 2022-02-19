@@ -1,62 +1,83 @@
-import requests
+import requests  # REST requests
 from traffic_light import TrafficLight
 
-# inputs 12,100,2,4
-# output [boolean , boolean, boolean, boolean]
-
 # globals:
-
-NORTH = 0
-EAST = 1
-SOUTH = 2
-WEST = 3
+NORTH = "NORTH"
+EAST = "EAST"
+SOUTH = "SOUTH"
+WEST = "WEST"
 
 MAX_SIGNAL_DURATION = 15  # 15 seconds
 STARVATION_THRESHOLD = 3
 
-is_new_state = False
+# is_new_state = False
+
 
 def get_directions_queue(trafic_lights):
-    return [trafic_light for trafic_light in sorted(trafic_lights, key=lambda item: item.count)]
-    
-
-# STARVATION_THRESHOLD = 3
-# trafic_lights = [tNorth,tSouth,tEast,tWest]
-# amount, direction = get_direction_and_amount()
-# x = {"north":2, "west": 4, "south": 6, "east" :8}
-# print(x)
-# {k: v for k, v in sorted(x.items(), key=lambda item: item[1])}
-# print(x)
-
-# for trafic_light in trafic_lights:
-#     pass
+    queue = [trafic_light for trafic_light in sorted(
+        trafic_lights, key=lambda item: item.count)]
+    return queue.pop()
 
 
-# returns [boolean , boolean, boolean, boolean]
 def calculate(traffic_lights):
-    [12,23,34,7]
-    lights_queue = get_directions_queue(traffic_lights)
-    for light in lights_queue:
-        pass
-    pass
-    
-def main():
+    # which traffic light has the most cars?
+    first_in_queue = get_directions_queue(traffic_lights)
+    for traffic_light in traffic_lights:
+        if first_in_queue.direction == traffic_light.direction:
+            continue
+        # will not let other traffic lights starve
+        if traffic_light.starvation >= STARVATION_THRESHOLD:
+            first_in_queue = traffic_light
+
+    new_traffic_queue = []
+    # Sets the boolean array for the unity.
+    for traffic_light in traffic_lights:
+        is_green = first_in_queue.direction == traffic_light.direction
+        if is_green:
+            traffic_light.starvation = 0
+        else:
+            traffic_light.starvation += 1
+        new_traffic_queue.append(traffic_light.starvation)
+
+    return new_traffic_queue
+
+
+# [1,1,20,20]
+
+# [0,0,0,0]
+# [1,1,1,0]
+# [2,2,0,1]
+# [3,3,1,0]
+
+#  0 0 0 0
+#  1 1 1 0
+#  2 2 0 1
+#  3 0 1 2
+
+def init():
+    global traffic_lights
+    # traffic lights list maintains its order:
+    traffic_lights = [TrafficLight(NORTH), TrafficLight(
+        WEST), TrafficLight(EAST), TrafficLight(SOUTH)]
+
+# counts: north, west, east, south
+
+
+def main(counts):
     # recieving array with the amount of cars in each direction.
     # when the calculation completes, we need to update the number of cars in each direction and the starvations.
-    tl_north = TrafficLight(NORTH)
-    tl_west = TrafficLight(WEST)
-    tl_east = TrafficLight(EAST)
-    tl_south = TrafficLight(SOUTH)
-    traffic_lights = [tl_north,tl_west, tl_east, tl_south]
-    calculate(traffic_lights)
-    # response = requests.get("http://api.open-notify.org/astros.json")
-    # print(response.json())
-    # print(response)
+    for traffic_light, count in zip(traffic_lights, counts):
+        traffic_light.set_count(count)
+    current_queue = calculate(traffic_lights)
+    print(current_queue)
+
 
 if __name__ == '__main__':
+    init()
+    main([23, 14, 5, 18])  # -> [0,1,1,1]
+    main([14, 18, 8, 18])  # ->[1,2,2,0]
+    main([19, 18, 8, 4])  # ->[0,3,3,1]
+    main([9, 19, 9, 19]) #-> [1,4,0,2]
+    main([16, 19, 0, 27])  
 
-    x = {"north":2, "west": 8, "south": 6, "east" :1}
-    print(x)
-    
-    print(x)
-    # main()
+    # main([13, 7, 7, 5])
