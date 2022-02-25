@@ -8,20 +8,39 @@ SOUTH = "SOUTH"
 WEST = "WEST"
 
 MAX_SIGNAL_DURATION = 15  # 15 seconds
-STARVATION_THRESHOLD = 3
+STARVATION_THRESHOLD = 4
+DURATION_FOR_SINGLE_CAR = 4 # 3 seconds for a single car to pass the junction (in avg)
+# MAX_STARVATION = 4 # maximum starvation possible for single light
 
+traffic_lights = []
 # is_new_state = False
 
+# TODO:
+# 1. Each direction has 2 lanes and should be calculating the amount accordingly
+# 2. Calculate not only who gets to be next, but also how much time the cars in that direction will have to pass the junction.
+# 3. Sending to Unity: {"direction": "north", "duration": "14.4"}
 
-def get_directions_queue(trafic_lights):
+
+def get_first_in_queue(trafic_lights):
     queue = [trafic_light for trafic_light in sorted(
         trafic_lights, key=lambda item: item.count)]
     return queue.pop()
 
-
-def calculate(traffic_lights):
+# returns the next traffic light that should be green and the duration
+def calculate():
     # which traffic light has the most cars?
-    first_in_queue = get_directions_queue(traffic_lights)
+    first_in_queue = get_first_in_queue(traffic_lights)
+    update_first_by_starvation(first_in_queue)
+    duration = calculate_green_light_duration(first_in_queue)
+    update_starvations(first_in_queue)
+   
+    return [first_in_queue.direction, duration]
+
+
+# Checks starvation of each direction. If starvation reach to the threshold,
+# it becomes the first in queue.
+def update_first_by_starvation(first_in_queue):
+    global traffic_lights
     for traffic_light in traffic_lights:
         if first_in_queue.direction == traffic_light.direction:
             continue
@@ -29,38 +48,47 @@ def calculate(traffic_lights):
         if traffic_light.starvation >= STARVATION_THRESHOLD:
             first_in_queue = traffic_light
 
-    new_traffic_queue = []
-    # Sets the boolean array for the unity.
+
+def update_starvations(first_in_queue):
+    global traffic_lights
     for traffic_light in traffic_lights:
         is_green = first_in_queue.direction == traffic_light.direction
+        has_cars = traffic_light.count > 0
         if is_green:
-            traffic_light.starvation = 0
-        else:
+            traffic_light.starvation = 1
+        elif has_cars:
             traffic_light.starvation += 1
-        new_traffic_queue.append(traffic_light.starvation)
+        print(traffic_light.starvation, end=' ')
+    print('###')
 
-    return new_traffic_queue
+def calculate_green_light_duration(first_in_queue) -> float:
+    global traffic_lights
+    # weights:
+    # 1. relative_count - the current amount of cars /the total cars in all directions
+    # 2. normalized_starvation - the current starvation / maximum starvation
+    total_count = sum(tl.count for tl in traffic_lights)
+    relative_count = first_in_queue.count / total_count
+    normalized_starvation = first_in_queue.starvation / STARVATION_THRESHOLD
+    # formula: 
+    duration = (first_in_queue.count / 2) * normalized_starvation * relative_count * DURATION_FOR_SINGLE_CAR 
+    
+    return duration
 
 
-# [1,1,20,20]
+#   counts            durations          starvations
+#   [23, 14, 5, 18] -> [11.5, 7, 2.5, 9] -> [0, 1, 1, 1]
+#   [14, 18, 8, 18] -> [7, 18, 8 ,18] -> [1,2,2,0]
+#   [19, 18, 8, 4] -> [] -> [0,3,3,1]
+#   [9, 19, 9, 19] -> [] -> [1,4,0,2]
+#   [16, 19, 0, 27] -> 
 
-# [0,0,0,0]
-# [1,1,1,0]
-# [2,2,0,1]
-# [3,3,1,0]
-
-#  0 0 0 0
-#  1 1 1 0
-#  2 2 0 1
-#  3 0 1 2
 
 def init():
     global traffic_lights
     # traffic lights list maintains its order:
-    traffic_lights = [TrafficLight(NORTH), TrafficLight(
+    traffic_lights = [TrafficLight(NORTH, STARVATION_THRESHOLD), TrafficLight(
         WEST), TrafficLight(EAST), TrafficLight(SOUTH)]
 
-# counts: north, west, east, south
 
 
 def main(counts):
@@ -68,16 +96,14 @@ def main(counts):
     # when the calculation completes, we need to update the number of cars in each direction and the starvations.
     for traffic_light, count in zip(traffic_lights, counts):
         traffic_light.set_count(count)
-    current_queue = calculate(traffic_lights)
-    print(current_queue)
+    duration_and_direction = calculate()
+    print(duration_and_direction)
 
 
 if __name__ == '__main__':
     init()
     main([23, 14, 5, 18])  # -> [0,1,1,1]
-    main([14, 18, 8, 18])  # ->[1,2,2,0]
-    main([19, 18, 8, 4])  # ->[0,3,3,1]
-    main([9, 19, 9, 19]) #-> [1,4,0,2]
+    main([14, 18, 8, 18])  # -> [1,2,2,0]
+    main([19, 18, 8, 4])  # -> [0,3,3,1]
+    main([9, 19, 9, 19]) #->  [1,4,0,2]
     main([16, 19, 0, 27])  
-
-    # main([13, 7, 7, 5])

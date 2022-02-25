@@ -1,5 +1,5 @@
 class TrafficLight:
-    def __init__(self, direction,starvation=0) -> None:
+    def __init__(self, direction,starvation=1) -> None:
         self.count = 0
         self.duration = 0
         self.direction = direction
