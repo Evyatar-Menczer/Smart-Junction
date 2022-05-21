@@ -1,4 +1,6 @@
-import requests  # REST requests
+import socket
+import json
+# import requests  # REST requests
 from traffic_light import TrafficLight
 
 # globals:
@@ -10,15 +12,17 @@ WEST = "WEST"
 MAX_SIGNAL_DURATION = 15  # 15 seconds
 STARVATION_THRESHOLD = 5
 DURATION_FOR_SINGLE_CAR = 4 # 3 seconds for a single car to pass the junction (in avg)
-MAX_STARVATION = 4 # maximum starvation possible for single light
+STARVATION_NORMALIZATION_FACTOR = 4 # Coefficient for division of starvation
 
 traffic_lights = []
 # is_new_state = False
 
+# Action Items:
+# 1. Sending to Unity: {"direction": "north", "duration": "14.4"}
+
 # TODO:
-# 1. Each direction has 2 lanes and should be calculating the amount accordingly
-# 2. Calculate not only who gets to be next, but also how much time the cars in that direction will have to pass the junction.
-# 3. Sending to Unity: {"direction": "north", "duration": "14.4"}
+# 1. Detecting in a situation where there only few cars in a single direction and let them all pass.
+# 2. Test in unity
 
 
 def get_light_with_most_cars(trafic_lights):
@@ -38,7 +42,6 @@ def calculate():
     update_starvations(first_in_queue)
    
     return [first_in_queue.direction, duration]
-
 
 # Checks starvation of each direction. If starvation reach to the threshold,
 # it becomes the first in queue.
@@ -63,7 +66,6 @@ def update_first_by_starvation(light_with_most_cars):
     
     return first_in_queue
 
-
 def update_starvations(first_in_queue):
     global traffic_lights
     for traffic_light in traffic_lights:
@@ -83,26 +85,51 @@ def calculate_green_light_duration(first_in_queue) -> float:
     # 2. normalized_starvation - the current starvation / maximum starvation
     total_count = sum(tl.count for tl in traffic_lights)
     relative_count = first_in_queue.count / total_count
-    normalized_starvation = first_in_queue.starvation / MAX_STARVATION
+    normalized_starvation = first_in_queue.starvation / STARVATION_NORMALIZATION_FACTOR
     # formula: 
     duration = (first_in_queue.count / 2) * normalized_starvation * relative_count * DURATION_FOR_SINGLE_CAR 
     
     return duration
 
 
-#   counts            durations          starvations
-#   [23, 14, 5, 18] -> [11.5, 7, 2.5, 9] -> [0, 1, 1, 1]
-#   [14, 18, 8, 18] -> [7, 18, 8 ,18] -> [1,2,2,0]
-#   [19, 18, 8, 4] -> [] -> [0,3,3,1]
-#   [9, 19, 9, 19] -> [] -> [1,4,0,2]
-#   [16, 19, 0, 27] -> 
+# def send_data_to_unity(data):
+#     # data is a dict
+#     json_data = json.dumps(data)
+#     sock.sendall(bytes(json_data, encoding="utf-8"))
 
+
+# def recv_data_from_unity():
+#     recv_data = sock.recv(1024)
+#     recv_data = recv_data.decode("utf-8")
+#     return recv_data
 
 def init():
-    global traffic_lights
+    global traffic_lights, sock
+    # init socket
+    # HOST = "127.0.0.1"
+    # PORT = 3000
+    # sock = socket.socket()
+    # sock.connect((HOST, PORT))
+    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+    PORT = 3000  # Port to listen on (non-privileged ports are > 1023)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        conn, addr = s.accept()
+        print(addr)
+        with conn:
+            print(f"Connected by {addr}")
+            while True:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                conn.sendall(data)
+
     # traffic lights list maintains its order:
     traffic_lights = [TrafficLight(NORTH), TrafficLight(
         WEST), TrafficLight(EAST), TrafficLight(SOUTH)]
+
 
 
 
@@ -117,14 +144,35 @@ def main(counts):
 
 if __name__ == '__main__':
     init()
-    main([23, 14, 5, 18])  # -> [1,2,2,2]
-    main([14, 18, 8, 18])  # -> [2,3,3,1]
-    main([19, 18, 8, 4])  # -> [1,4,4,2]
-    main([9, 19, 9, 19]) #->  [2,5,1,3]
-    main([16, 19, 0, 27])  
 
-    main([23, 14, 5, 18])  # -> [0,1,1,1]
-    main([14, 18, 8, 18])  # -> [1,2,2,0]
-    # main([19, 18, 8, 4])  # -> [0,3,3,1]
-    # main([9, 19, 9, 19]) #->  [1,4,0,2]
-    # main([16, 19, 0, 27])  
+    while True:
+        print(recv_data_from_unity())
+    # # -> [1, 1, 1, 1]
+    # main([23, 14, 5, 18]) # NORTH
+    # # -> [1,2,2,2] 
+    # main([14, 18, 8, 18]) # SOUTH
+    # # -> [2,3,3,1] 
+    # main([19, 18, 8, 4]) # NORTH
+    # # -> [1,4,4,2] 
+    # main([9, 19, 9, 19]) # SOUTH
+    # # -> [2,5,5,1] 
+    # main([16, 8, 9, 27]) # EAST
+    # # -> [3,6,1,2] 
+    # main([20, 10, 2, 30]) # WEST
+    # # -> [4,1,2,3] 
+    # main([23, 3, 3, 30]) # SOUTH
+    # # -> [5,2,3,1]
+
+
+    #Last session summary:
+    # Started to set up the unity-python connection using socket communication.
+    # Need to talk to Bentov to help us set up the unity side
+    # 
+    # We tested dry run of the algorithm and it seems to be working fine.
+    # 
+
+
+
+
+
+
