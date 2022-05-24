@@ -110,28 +110,55 @@ def init():
     # PORT = 3000
     # sock = socket.socket()
     # sock.connect((HOST, PORT))
-    HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-    PORT = 3000  # Port to listen on (non-privileged ports are > 1023)
+    # HOST = "localhost"  # Standard loopback interface address (localhost)
+    # PORT = 3000  # Port to listen on (non-privileged ports are > 1023)
+    # print('Init')
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #     s.bind((HOST, PORT))
+    #     print("Before listening:")
+    #     s.listen()
+    #     conn, addr = s.accept()
+    #     print(addr)
+    #     with conn:
+    #         print(f"Connected by {addr}")
+    #         while True:
+    #             data = conn.recv(1024)
+    #             if not data:
+    #                 break
+    #             conn.sendall(data)
+    # create a socket object
+    serversocket = socket.socket(
+                socket.AF_INET, socket.SOCK_STREAM) 
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
-        conn, addr = s.accept()
-        print(addr)
-        with conn:
-            print(f"Connected by {addr}")
-            while True:
-                data = conn.recv(1024)
-                if not data:
-                    break
-                conn.sendall(data)
+    # get local machine name
+    host = socket.gethostname()    
+    print(host)                       
+
+    port = 8080                                           
+
+    # bind to the port
+    serversocket.bind(("localhost", port))                                  
+
+    # queue up to 5 requests
+    serversocket.listen(5)                                           
+
+    while True:
+        # establish a connection
+        clientsocket,addr = serversocket.accept()      
+
+        print("Got a connection from %s" % str(addr))
+            
+        msg = 'Thank you for connecting'+ "\r\n"
+        clientsocket.send(msg.encode('ascii'))
+
+        x = clientsocket.recv(1024)
+        print(x)
+
+        clientsocket.close()
 
     # traffic lights list maintains its order:
     traffic_lights = [TrafficLight(NORTH), TrafficLight(
         WEST), TrafficLight(EAST), TrafficLight(SOUTH)]
-
-
-
 
 def main(counts):
     # recieving array with the amount of cars in each direction.
@@ -140,7 +167,6 @@ def main(counts):
         traffic_light.set_count(count)
     duration_and_direction = calculate()
     print(duration_and_direction)
-
 
 if __name__ == '__main__':
     init()
