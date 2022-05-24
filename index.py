@@ -22,7 +22,7 @@ traffic_lights = []
 
 # TODO:
 # 1. Detecting in a situation where there only few cars in a single direction and let them all pass.
-# 2. Test in unity
+# 2. Send minimum duration to pass the junction
 
 
 def get_light_with_most_cars(trafic_lights):
@@ -91,74 +91,37 @@ def calculate_green_light_duration(first_in_queue) -> float:
     
     return duration
 
-
-# def send_data_to_unity(data):
-#     # data is a dict
-#     json_data = json.dumps(data)
-#     sock.sendall(bytes(json_data, encoding="utf-8"))
-
-
-# def recv_data_from_unity():
-#     recv_data = sock.recv(1024)
-#     recv_data = recv_data.decode("utf-8")
-#     return recv_data
-
 def init():
-    global traffic_lights, sock
-    # init socket
-    # HOST = "127.0.0.1"
-    # PORT = 3000
-    # sock = socket.socket()
-    # sock.connect((HOST, PORT))
-    # HOST = "localhost"  # Standard loopback interface address (localhost)
-    # PORT = 3000  # Port to listen on (non-privileged ports are > 1023)
-    # print('Init')
-    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #     s.bind((HOST, PORT))
-    #     print("Before listening:")
-    #     s.listen()
-    #     conn, addr = s.accept()
-    #     print(addr)
-    #     with conn:
-    #         print(f"Connected by {addr}")
-    #         while True:
-    #             data = conn.recv(1024)
-    #             if not data:
-    #                 break
-    #             conn.sendall(data)
-    # create a socket object
-    serversocket = socket.socket(
-                socket.AF_INET, socket.SOCK_STREAM) 
-
-    # get local machine name
-    host = socket.gethostname()    
-    print(host)                       
-
-    port = 8080                                           
-
-    # bind to the port
-    serversocket.bind(("localhost", port))                                  
-
-    # queue up to 5 requests
-    serversocket.listen(5)                                           
-
-    while True:
-        # establish a connection
-        clientsocket,addr = serversocket.accept()      
-
-        print("Got a connection from %s" % str(addr))
-            
-        msg = 'Thank you for connecting'+ "\r\n"
-        clientsocket.send(msg.encode('ascii'))
-
-        x = clientsocket.recv(1024)
-        print(x)
-
-        clientsocket.close()
-
+    global traffic_lights
     # traffic lights list maintains its order:
     traffic_lights = [TrafficLight(NORTH), TrafficLight(
         WEST), TrafficLight(EAST), TrafficLight(SOUTH)]
+        
+    serversocket = socket.socket(
+                socket.AF_INET, socket.SOCK_STREAM) 
+    port = 8080
+    # bind to the port
+    serversocket.bind(("localhost", port))
+    # queue up to 5 requests
+    serversocket.listen(5)
+    clientsocket,addr = serversocket.accept()
+    print("Got a connection from %s" % str(addr))
+    msg = 'Thank you for connecting'+ "\r\n"
+    clientsocket.send(msg.encode('ascii'))
+
+    while True:
+        # establish a connection
+
+        recievedData = clientsocket.recv(1024)
+        counts = recievedData.decode()
+        print('Data recieved => ', counts)
+        countsArray = [int(x) for x in counts.split(",")]
+        print("counts after split:", countsArray)
+        res = main(countsArray)
+        clientsocket.send(json.dumps(res).encode('ascii'))
+        # clientsocket.close()
+
+
 
 def main(counts):
     # recieving array with the amount of cars in each direction.
@@ -167,35 +130,15 @@ def main(counts):
         traffic_light.set_count(count)
     duration_and_direction = calculate()
     print(duration_and_direction)
+    return duration_and_direction
 
 if __name__ == '__main__':
     init()
 
     while True:
         print(recv_data_from_unity())
-    # # -> [1, 1, 1, 1]
-    # main([23, 14, 5, 18]) # NORTH
-    # # -> [1,2,2,2] 
-    # main([14, 18, 8, 18]) # SOUTH
-    # # -> [2,3,3,1] 
-    # main([19, 18, 8, 4]) # NORTH
-    # # -> [1,4,4,2] 
-    # main([9, 19, 9, 19]) # SOUTH
-    # # -> [2,5,5,1] 
-    # main([16, 8, 9, 27]) # EAST
-    # # -> [3,6,1,2] 
-    # main([20, 10, 2, 30]) # WEST
-    # # -> [4,1,2,3] 
-    # main([23, 3, 3, 30]) # SOUTH
-    # # -> [5,2,3,1]
 
 
-    #Last session summary:
-    # Started to set up the unity-python connection using socket communication.
-    # Need to talk to Bentov to help us set up the unity side
-    # 
-    # We tested dry run of the algorithm and it seems to be working fine.
-    # 
 
 
 
