@@ -84,6 +84,7 @@ def calculate_green_light_duration(first_in_queue) -> float:
     # 1. relative_count - the current amount of cars /the total cars in all directions
     # 2. normalized_starvation - the current starvation / maximum starvation
     total_count = sum(tl.count for tl in traffic_lights)
+    total_count = 1 if total_count == 0 else total_count
     relative_count = first_in_queue.count / total_count
     normalized_starvation = first_in_queue.starvation / STARVATION_NORMALIZATION_FACTOR
     # formula: 
@@ -102,6 +103,7 @@ def init():
     port = 8080
     # bind to the port
     serversocket.bind(("localhost", port))
+    
     # queue up to 5 requests
     serversocket.listen(5)
     clientsocket,addr = serversocket.accept()
@@ -111,14 +113,14 @@ def init():
 
     while True:
         # establish a connection
-
         recievedData = clientsocket.recv(1024)
         counts = recievedData.decode()
         print('Data recieved => ', counts)
         countsArray = [int(x) for x in counts.split(",")]
         print("counts after split:", countsArray)
         res = main(countsArray)
-        clientsocket.send(json.dumps(res).encode('ascii'))
+        print(res)
+        clientsocket.send(res.encode('ascii'))
         # clientsocket.close()
 
 
@@ -128,9 +130,8 @@ def main(counts):
     # when the calculation completes, we need to update the number of cars in each direction and the starvations.
     for traffic_light, count in zip(traffic_lights, counts):
         traffic_light.set_count(count)
-    duration_and_direction = calculate()
-    print(duration_and_direction)
-    return duration_and_direction
+    direction,duration = calculate()
+    return f'{direction},{duration}'
 
 if __name__ == '__main__':
     init()
