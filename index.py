@@ -125,24 +125,20 @@ def run():
 
     while True:
         # establish a connection
-        print(fg('white') + "----------------------------")
+        print("----------------------------")
         print("Python Server: Receiving data.......")
         recievedData = clientsocket.recv(1024)
         counts = recievedData.decode()
         print()
-        print('Python Server: Data recieved ==>', fg('green') + counts)
+        print('Python Server: Data recieved ==>',counts)
         print()
         countsArray = [int(x) for x in counts.split(",")]
-        print("Python Server: counts array after splitting ==>",
-              fg('green') + countsArray)
+        print("Python Server: counts array after splitting ==>",countsArray)
         print()
         direction, duration = calculate(countsArray)
         result = parse_calculation_result(direction, duration)
-        print("Python Server: sending to Unity Client the result ==>",
-              fg('green') + result)
+        print("Python Server: sending to Unity Client the result ==>",result)
         clientsocket.send(result.encode('ascii'))
-        clientsocket.close()
-
 
 def main():
     init()
