@@ -2,7 +2,6 @@
 # 1. Detecting in a situation where there only few cars in a single direction and let them all pass.
 # 2. Send minimum duration to pass the junction
 
-from colored import fg
 import socket
 from traffic_light import TrafficLight
 from direction_types import NORTH, EAST, SOUTH, WEST
@@ -117,7 +116,7 @@ def init():
     # -------------------------------------------------
 
 
-def run():
+def start():
     clientsocket, addr = serversocket.accept()
     print("Got a connection from %s" % str(addr))
     msg = 'Connected to Python Server'
@@ -130,19 +129,20 @@ def run():
         recievedData = clientsocket.recv(1024)
         counts = recievedData.decode()
         print()
-        print('Python Server: Data recieved ==>',counts)
+        print('Python Server: Data recieved ==>', counts)
         print()
         countsArray = [int(x) for x in counts.split(",")]
-        print("Python Server: counts array after splitting ==>",countsArray)
+        print("Python Server: counts array after splitting ==>", countsArray)
         print()
         direction, duration = calculate(countsArray)
         result = parse_calculation_result(direction, duration)
-        print("Python Server: sending to Unity Client the result ==>",result)
+        print("Python Server: sending to Unity Client the result ==>", result)
         clientsocket.send(result.encode('ascii'))
+
 
 def main():
     init()
-    run()
+    start()
 
 
 if __name__ == '__main__':
