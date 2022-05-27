@@ -1,41 +1,33 @@
+# TODO:
+# 1. Detecting in a situation where there only few cars in a single direction and let them all pass.
+# 2. Send minimum duration to pass the junction
+
+from colored import fg
 import socket
 import json
-# import requests  # REST requests
 from traffic_light import TrafficLight
+from direction_types import NORTH, EAST, SOUTH, WEST
 
 # globals:
-NORTH = "NORTH"
-EAST = "EAST"
-SOUTH = "SOUTH"
-WEST = "WEST"
-
 MAX_SIGNAL_DURATION = 15  # 15 seconds
 STARVATION_THRESHOLD = 5
 DURATION_FOR_SINGLE_CAR = 4 # 3 seconds for a single car to pass the junction (in avg)
 STARVATION_NORMALIZATION_FACTOR = 4 # Coefficient for division of starvation
 
 traffic_lights = []
-# is_new_state = False
-
-# Action Items:
-# 1. Sending to Unity: {"direction": "north", "duration": "14.4"}
-
-# TODO:
-# 1. Detecting in a situation where there only few cars in a single direction and let them all pass.
-# 2. Send minimum duration to pass the junction
-
 
 def get_light_with_most_cars(trafic_lights):
     queue = [trafic_light for trafic_light in sorted(
         trafic_lights, key=lambda item: item.count)]
     return queue.pop()
 
-# returns the next traffic light that should be green and the duration
-def calculate():
-    # which traffic light has the most cars?
-    for tl in traffic_lights:
-        print(tl.starvation, end=' ')
-    print()
+# Calculates the next traffic light that should be green and the duration
+def calculate(debug = False):
+    if debug:
+        # which traffic light has the most cars?
+        for tl in traffic_lights:
+            print(tl.starvation, end=' ')
+        print()
     light_with_most_cars = get_light_with_most_cars(traffic_lights)
     first_in_queue = update_first_by_starvation(light_with_most_cars)
     duration = calculate_green_light_duration(first_in_queue)
@@ -75,8 +67,6 @@ def update_starvations(first_in_queue):
             traffic_light.starvation = 1
         elif has_cars:
             traffic_light.starvation += 1
-        # print(traffic_light.starvation, end=' ')
-    # print('###')
 
 def calculate_green_light_duration(first_in_queue) -> float:
     global traffic_lights
@@ -106,23 +96,28 @@ def init():
     
     # queue up to 5 requests
     serversocket.listen(5)
+    print("Waiting for connection........")
     clientsocket,addr = serversocket.accept()
     print("Got a connection from %s" % str(addr))
-    msg = 'Thank you for connecting'+ "\r\n"
+    msg = 'Connected to Python Server'
     clientsocket.send(msg.encode('ascii'))
-
+    
     while True:
         # establish a connection
+        print("----------------------------")
+        print("Python Server: Receiving data.......")
         recievedData = clientsocket.recv(1024)
         counts = recievedData.decode()
-        print('Data recieved => ', counts)
+        print()
+        print('Python Server: Data recieved ==>', fg('green') + counts)
+        print()
         countsArray = [int(x) for x in counts.split(",")]
-        print("counts after split:", countsArray)
+        print("Python Server: counts array after splitting ==>", fg('green') + countsArray)
+        print()
         res = main(countsArray)
-        print(res)
+        print("Python Server: sending to Unity Client the result ==>", fg('green') + res)
         clientsocket.send(res.encode('ascii'))
         # clientsocket.close()
-
 
 
 def main(counts):
@@ -135,14 +130,3 @@ def main(counts):
 
 if __name__ == '__main__':
     init()
-
-    while True:
-        print(recv_data_from_unity())
-
-
-
-
-
-
-
-
