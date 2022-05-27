@@ -90,6 +90,10 @@ def calculate_green_light_duration(first_in_queue):
     return duration
 
 
+def parse_calculation_result(direction, duration):
+    return f'{direction},{duration}'
+
+
 def init():
     global traffic_lights, serversocket
 
@@ -138,10 +142,6 @@ def run():
               fg('green') + result)
         clientsocket.send(result.encode('ascii'))
         clientsocket.close()
-
-
-def parse_calculation_result(direction, duration):
-    return f'{direction},{duration}'
 
 
 def main():
