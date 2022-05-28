@@ -85,6 +85,9 @@ def calculate_green_light_duration(first_in_queue):
     # formula:
     duration = (first_in_queue.count / 2) * normalized_starvation * \
         relative_count * DURATION_FOR_SINGLE_CAR_IN_SECONDS
+    
+    if duration < DURATION_FOR_SINGLE_CAR_IN_SECONDS:
+        duration = DURATION_FOR_SINGLE_CAR_IN_SECONDS
 
     return duration
 
